@@ -231,3 +231,83 @@ it('admin geral é criado sem congregação mesmo que uma seja enviada', functio
         'congregacao_id' => null,
     ]);
 });
+
+// ==========================================================
+// TESTES DE VALIDAÇÃO DE SENHAS
+// ==========================================================
+
+it('não permite criar usuário com senha menor que oito caracteres', function () {
+    $admin = User::factory()->admin()->create();
+
+    actingAs($admin)
+        ->post(route('users.store'), [
+            'name' => 'Usuário Senha Curta',
+            'email' => 'senha.curta@adtc2.local',
+            'password' => '1234567',
+            'role' => UserRole::Visualizador->value,
+        ])
+        ->assertSessionHasErrors('password');
+
+    $this->assertDatabaseMissing('users', [
+        'email' => 'senha.curta@adtc2.local',
+    ]);
+});
+
+it('permite criar usuário com senha de oito caracteres', function () {
+    $admin = User::factory()->admin()->create();
+
+    actingAs($admin)
+        ->post(route('users.store'), [
+            'name' => 'Usuário Senha Válida',
+            'email' => 'senha.valida@adtc2.local',
+            'password' => '12345678',
+            'role' => UserRole::Visualizador->value,
+        ])
+        ->assertRedirect(route('users.index'));
+
+    $usuario = User::where('email', 'senha.valida@adtc2.local')->firstOrFail();
+
+    expect(Hash::check('12345678', $usuario->password))->toBeTrue();
+});
+
+it('não permite atualizar usuário com senha menor que oito caracteres', function () {
+    $admin = User::factory()->admin()->create();
+
+    $alvo = User::factory()->visualizador()->create([
+        'password' => bcrypt('senha_original'),
+    ]);
+
+    actingAs($admin)
+        ->put(route('users.update', $alvo), [
+            'name' => $alvo->name,
+            'email' => $alvo->email,
+            'role' => UserRole::Visualizador->value,
+            'password' => '1234567',
+        ])
+        ->assertSessionHasErrors('password');
+
+    $alvo->refresh();
+
+    expect(Hash::check('senha_original', $alvo->password))->toBeTrue();
+});
+
+it('permite atualizar usuário com senha de oito caracteres', function () {
+    $admin = User::factory()->admin()->create();
+
+    $alvo = User::factory()->visualizador()->create([
+        'password' => bcrypt('senha_original'),
+    ]);
+
+    actingAs($admin)
+        ->put(route('users.update', $alvo), [
+            'name' => $alvo->name,
+            'email' => $alvo->email,
+            'role' => UserRole::Visualizador->value,
+            'password' => '12345678',
+        ])
+        ->assertRedirect(route('users.index'));
+
+    $alvo->refresh();
+
+    expect(Hash::check('12345678', $alvo->password))->toBeTrue();
+});

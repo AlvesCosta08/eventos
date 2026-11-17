@@ -33,7 +33,7 @@ class StoreUserRequest extends FormRequest
             'password' => [
                 'required',
                 'string',
-                'min:6',
+                'min:8',
             ],
 
             'role' => [
