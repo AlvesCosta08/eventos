@@ -15,67 +15,157 @@ use Illuminate\View\View;
 
 class EventoController extends Controller
 {
+    /**
+     * Lista os eventos conforme as permissões do usuário.
+     */
     public function index(Request $request): View
     {
-        $user = auth()->user();
-        $filtros = $request->only(['busca', 'congregacao_id', 'situacao', 'de', 'ate']);
+        $this->authorize('viewAny', Evento::class);
+
+        $user = $request->user();
+
+        $filtros = $request->only([
+            'busca',
+            'congregacao_id',
+            'situacao',
+            'de',
+            'ate',
+        ]);
 
         $query = Evento::query()->with('congregacao');
 
-        // Escopo forçado por congregação para líder
-        if (!$user->role->veTodosEventos() && $user->congregacao_id) {
-            $query->where('congregacao_id', $user->congregacao_id);
-            $filtros['congregacao_id'] = $user->congregacao_id;
+        if (!$user->isAdminGeral()) {
+            if ($user->congregacao_id === null) {
+                // Sem congregação, não pode visualizar eventos.
+                $query->whereRaw('1 = 0');
+            } else {
+                // Restringe os eventos à própria congregação.
+                $query->where(
+                    'congregacao_id',
+                    $user->congregacao_id
+                );
+            }
+
+            // Impede que filtros ampliem o escopo permitido.
+            unset($filtros['congregacao_id']);
         }
 
         $query->filter($filtros);
-        $eventos = $query->orderBy('dt_evento')->paginate(20)->withQueryString();
 
-        $congregacoes = $user->role->veTodosEventos()
+        $eventos = $query
+            ->orderBy('dt_evento')
+            ->paginate(20)
+            ->withQueryString();
+
+        $congregacoes = $user->isAdminGeral()
             ? Congregacao::orderBy('nome')->get()
-            : Congregacao::where('id', $user->congregacao_id)->get();
+            : Congregacao::where(
+                'id',
+                $user->congregacao_id
+            )->get();
 
-        return view('eventos.index', compact('eventos', 'congregacoes', 'filtros'));
+        // Mantém o filtro visual da congregação do usuário.
+        if (!$user->isAdminGeral()) {
+            $filtros['congregacao_id'] = $user->congregacao_id;
+        }
+
+        return view(
+            'eventos.index',
+            compact('eventos', 'congregacoes', 'filtros')
+        );
     }
 
+    /**
+     * Exibe o formulário de cadastro.
+     */
     public function create(): View
     {
-        $congregacoes = Congregacao::orderBy('nome')->get();
+        $this->authorize('create', Evento::class);
+
+        $user = auth()->user();
+
+        $congregacoes = $user->isAdminGeral()
+            ? Congregacao::orderBy('nome')->get()
+            : Congregacao::where(
+                'id',
+                $user->congregacao_id
+            )->get();
+
         $evento = new Evento();
 
-        return view('eventos.form', compact('congregacoes', 'evento'));
+        return view(
+            'eventos.form',
+            compact('congregacoes', 'evento')
+        );
     }
 
-    public function store(StoreEventoRequest $request, CreateEventoAction $action): RedirectResponse
-    {
+    /**
+     * Salva um novo evento.
+     */
+    public function store(
+        StoreEventoRequest $request,
+        CreateEventoAction $action
+    ): RedirectResponse {
         $action->execute($request->validated());
 
-        return redirect()->route('eventos.index')
+        return redirect()
+            ->route('eventos.index')
             ->with('success', 'Evento criado com sucesso.');
     }
 
+    /**
+     * Exibe o formulário de edição.
+     */
     public function edit(Evento $evento): View
     {
         $this->authorize('update', $evento);
-        $congregacoes = Congregacao::orderBy('nome')->get();
 
-        return view('eventos.form', compact('congregacoes', 'evento'));
+        $user = auth()->user();
+
+        $congregacoes = $user->isAdminGeral()
+            ? Congregacao::orderBy('nome')->get()
+            : Congregacao::where(
+                'id',
+                $user->congregacao_id
+            )->get();
+
+        return view(
+            'eventos.form',
+            compact('congregacoes', 'evento')
+        );
     }
 
-    public function update(UpdateEventoRequest $request, Evento $evento, UpdateEventoAction $action): RedirectResponse
-    {
-        $action->execute($evento, $request->validated());
+    /**
+     * Atualiza um evento existente.
+     */
+    public function update(
+        UpdateEventoRequest $request,
+        Evento $evento,
+        UpdateEventoAction $action
+    ): RedirectResponse {
+        $action->execute(
+            $evento,
+            $request->validated()
+        );
 
-        return redirect()->route('eventos.index')
+        return redirect()
+            ->route('eventos.index')
             ->with('success', 'Evento atualizado com sucesso.');
     }
 
-    public function destroy(Evento $evento, DeleteEventoAction $action): RedirectResponse
-    {
+    /**
+     * Exclui um evento.
+     */
+    public function destroy(
+        Evento $evento,
+        DeleteEventoAction $action
+    ): RedirectResponse {
         $this->authorize('delete', $evento);
+
         $action->execute($evento);
 
-        return redirect()->route('eventos.index')
+        return redirect()
+            ->route('eventos.index')
             ->with('success', 'Evento excluído com sucesso.');
     }
 }
