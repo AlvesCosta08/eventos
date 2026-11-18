@@ -2,15 +2,27 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarioPublicoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventoController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-// Página inicial
-Route::get('/', fn () => redirect()->route('dashboard'));
+/*
+|--------------------------------------------------------------------------
+| Página pública — Calendário de eventos
+|--------------------------------------------------------------------------
+| Qualquer visitante pode visualizar o calendário sem autenticação.
+*/
+Route::get('/', [CalendarioPublicoController::class, 'index'])
+    ->name('calendario.publico');
 
-// Rotas públicas para visitantes
+/*
+|--------------------------------------------------------------------------
+| Autenticação
+|--------------------------------------------------------------------------
+| Apenas visitantes não autenticados acessam o formulário de login.
+*/
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])
         ->name('login');
@@ -19,7 +31,12 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:5,1');
 });
 
-// Rotas protegidas por autenticação
+/*
+|--------------------------------------------------------------------------
+| Área administrativa — Acesso autenticado
+|--------------------------------------------------------------------------
+| Dashboard, eventos e usuários permanecem protegidos.
+*/
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
