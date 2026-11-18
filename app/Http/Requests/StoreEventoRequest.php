@@ -2,29 +2,72 @@
 
 namespace App\Http\Requests;
 
+use App\Domain\Agenda\Services\ControleAgendaService;
 use App\Domain\Eventos\Enums\SituacaoEvento;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreEventoRequest extends FormRequest
 {
     /**
-     * Autoriza o cadastro de eventos.
+     * Autoriza o cadastro de eventos conforme
+     * o perfil e o controle anual da agenda.
      */
     public function authorize(): bool
     {
         $user = $this->user();
 
-        if (!$user || !$user->podeGerenciarEventos()) {
+        if (! $user || ! $user->podeGerenciarEventos()) {
             return false;
         }
 
+        // Administrador Geral pode cadastrar
+        // eventos independentemente do modo da agenda.
         if ($user->isAdminGeral()) {
             return true;
         }
 
-        return $user->isLiderCongregacao()
-            && $user->congregacao_id !== null;
+        // Apenas líderes vinculados a uma congregação
+        // podem cadastrar eventos.
+        if (
+            ! $user->isLiderCongregacao()
+            || $user->congregacao_id === null
+        ) {
+            return false;
+        }
+
+        $data = $this->input('dt_evento');
+
+        // Datas inválidas serão tratadas pelas
+        // regras de validação, não pela autorização.
+        if (! is_string($data)) {
+            return true;
+        }
+
+        try {
+            $dataEvento = Carbon::createFromFormat('!Y-m-d', $data);
+
+            if (
+                $dataEvento === false
+                || $dataEvento->format('Y-m-d') !== $data
+            ) {
+                return true;
+            }
+
+            $ano = (int) $dataEvento->year;
+        } catch (\Throwable $e) {
+            return true;
+        }
+
+        // RN-001: consulta o modo da agenda
+        // correspondente ao ano do evento.
+        return app(ControleAgendaService::class)
+            ->podeGerenciar(
+                $user,
+                $ano,
+                (int) $user->congregacao_id
+            );
     }
 
     /**
@@ -53,6 +96,7 @@ class StoreEventoRequest extends FormRequest
             'dt_evento' => [
                 'required',
                 'date',
+                'date_format:Y-m-d',
             ],
 
             'situacao' => [
@@ -70,7 +114,7 @@ class StoreEventoRequest extends FormRequest
     {
         $user = $this->user();
 
-        if (!$user || $user->isAdminGeral()) {
+        if (! $user || $user->isAdminGeral()) {
             return;
         }
 

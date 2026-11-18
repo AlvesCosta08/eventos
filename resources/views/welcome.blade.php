@@ -110,9 +110,9 @@
 @endphp
 <header class="site-header">
     <div class="container header-inner">
-        <a class="brand" href="{{ route('calendario.publico') }}" aria-label="Página inicial ADTC2 Eventos">
+        <a class="brand" href="{{ route('calendario.publico') }}" aria-label="Página inicial AGENDA ANUAL ADTC2 | CAMPO">
             <span class="brand-mark" aria-hidden="true">A</span>
-            <span><span class="brand-name">ADTC2 Eventos</span><span class="brand-caption">Agenda das congregações</span></span>
+            <span><span class="brand-name">AGENDA ANUAL ADTC2 | CAMPO</span><span class="brand-caption">Agenda das congregações</span></span>
         </a>
         @auth
             <a class="login-link" href="{{ route('dashboard') }}">Acessar painel <span aria-hidden="true">↗</span></a>
@@ -201,7 +201,7 @@
         @endif
     </section>
 </main>
-<footer class="footer">ADTC2 Eventos © {{ date('Y') }} · Calendário público das congregações</footer>
+<footer class="footer">AGENDA ANUAL ADTC2 | CAMPO © {{ date('Y') }} · Calendário público das congregações</footer>
 <dialog id="modal-evento" class="event-modal" aria-labelledby="modal-evento-titulo">
     <div class="modal-head"><strong>Detalhes do evento</strong><button class="close-button" type="button" data-fechar-modal aria-label="Fechar janela">×</button></div>
     <div class="modal-body">
