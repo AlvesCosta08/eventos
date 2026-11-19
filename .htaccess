@@ -1,0 +1,33 @@
+# =====================================================
+# ADTC2 EVENTOS - CONFIGURACAO APACHE
+# =====================================================
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloquear arquivos e diretorios ocultos.
+    RewriteRule (^|/)\. - [F,L]
+
+    # Bloquear diretorios internos do Laravel.
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$) - [F,L,NC]
+
+    # Bloquear arquivos internos do projeto.
+    RewriteRule ^(artisan|composer\.json|composer\.lock|package\.json|package-lock\.json|phpunit\.xml|vite\.config\.js)$ - [F,L,NC]
+
+    # Entregar arquivos e diretorios publicos existentes.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Encaminhar demais requisicoes ao Laravel.
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Defina o pacote “ea-php84” como a linguagem padrão de programação “PHP”.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php84___lsphp .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

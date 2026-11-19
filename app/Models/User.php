@@ -14,6 +14,9 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /**
+     * Atributos permitidos para atribuição em massa.
+     */
     protected $fillable = [
         'name',
         'email',
@@ -22,8 +25,17 @@ class User extends Authenticatable
         'congregacao_id',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    /**
+     * Atributos ocultos na serialização.
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
+    /**
+     * Conversão automática dos atributos.
+     */
     protected function casts(): array
     {
         return [
@@ -33,33 +45,60 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Congregação vinculada ao usuário.
+     */
     public function congregacao(): BelongsTo
     {
         return $this->belongsTo(Congregacao::class);
     }
 
+    /**
+     * Identifica o Administrador Geral.
+     */
     public function isAdminGeral(): bool
     {
         return $this->role === UserRole::AdminGeral;
     }
 
+    /**
+     * Identifica o Líder de Congregação.
+     */
     public function isLiderCongregacao(): bool
     {
         return $this->role === UserRole::LiderCongregacao;
     }
 
+    /**
+     * Identifica o usuário Visualizador.
+     */
+    public function isVisualizador(): bool
+    {
+        return $this->role === UserRole::Visualizador;
+    }
+
+    /**
+     * Verifica se o perfil pode gerenciar eventos.
+     */
     public function podeGerenciarEventos(): bool
     {
         return $this->role->podeGerenciarEventos();
     }
 
+    /**
+     * Verifica se o perfil pode gerenciar usuários.
+     */
     public function podeGerenciarUsuarios(): bool
     {
         return $this->role->podeGerenciarUsuarios();
     }
 
+    /**
+     * Verifica se o usuário pertence à congregação.
+     */
     public function pertenceACongregacao(int $congregacaoId): bool
     {
-        return $this->congregacao_id === $congregacaoId;
+        return $this->congregacao_id !== null
+            && (int) $this->congregacao_id === $congregacaoId;
     }
 }

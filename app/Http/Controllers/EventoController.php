@@ -11,6 +11,7 @@ use App\Models\Congregacao;
 use App\Models\Evento;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class EventoController extends Controller
@@ -20,7 +21,7 @@ class EventoController extends Controller
      */
     public function index(Request $request): View
     {
-        $this->authorize('viewAny', Evento::class);
+        Gate::authorize('viewAny', Evento::class);
 
         $user = $request->user();
 
@@ -32,21 +33,36 @@ class EventoController extends Controller
             'ate',
         ]);
 
-        $query = Evento::query()->with('congregacao');
+        $query = Evento::query()
+            ->with('congregacao');
 
-        if (!$user->isAdminGeral()) {
+        /*
+         * Administrador geral:
+         * visualiza eventos de todas as congregações.
+         *
+         * Líder:
+         * visualiza apenas eventos da sua congregação.
+         *
+         * Visualizador:
+         * pode consultar eventos de todas as congregações,
+         * desde que a Policy permita viewAny.
+         */
+        if ($user->isLiderCongregacao()) {
             if ($user->congregacao_id === null) {
-                // Sem congregação, não pode visualizar eventos.
                 $query->whereRaw('1 = 0');
             } else {
-                // Restringe os eventos à própria congregação.
                 $query->where(
                     'congregacao_id',
                     $user->congregacao_id
                 );
             }
 
-            // Impede que filtros ampliem o escopo permitido.
+            // Impede ampliar o escopo pelo filtro.
+            unset($filtros['congregacao_id']);
+        } elseif (!$user->isAdminGeral() && !$user->isVisualizador()) {
+            // Bloqueia perfis desconhecidos.
+            $query->whereRaw('1 = 0');
+
             unset($filtros['congregacao_id']);
         }
 
@@ -54,19 +70,28 @@ class EventoController extends Controller
 
         $eventos = $query
             ->orderBy('dt_evento')
+            ->orderBy('id')
             ->paginate(20)
             ->withQueryString();
 
-        $congregacoes = $user->isAdminGeral()
-            ? Congregacao::orderBy('nome')->get()
-            : Congregacao::where(
-                'id',
-                $user->congregacao_id
-            )->get();
+        /*
+         * Congregações disponíveis nos filtros.
+         */
+        if ($user->isLiderCongregacao()) {
+            $congregacoes = Congregacao::query()
+                ->where('id', $user->congregacao_id)
+                ->orderBy('nome')
+                ->get();
 
-        // Mantém o filtro visual da congregação do usuário.
-        if (!$user->isAdminGeral()) {
             $filtros['congregacao_id'] = $user->congregacao_id;
+        } elseif ($user->isAdminGeral() || $user->isVisualizador()) {
+            $congregacoes = Congregacao::query()
+                ->orderBy('nome')
+                ->get();
+        } else {
+            $congregacoes = Congregacao::query()
+                ->whereRaw('1 = 0')
+                ->get();
         }
 
         return view(
@@ -80,18 +105,23 @@ class EventoController extends Controller
      */
     public function create(): View
     {
-        $this->authorize('create', Evento::class);
+        Gate::authorize('create', Evento::class);
 
         $user = auth()->user();
 
         $congregacoes = $user->isAdminGeral()
-            ? Congregacao::orderBy('nome')->get()
-            : Congregacao::where(
-                'id',
-                $user->congregacao_id
-            )->get();
+            ? Congregacao::query()
+                ->orderBy('nome')
+                ->get()
+            : Congregacao::query()
+                ->where('id', $user->congregacao_id)
+                ->get();
 
         $evento = new Evento();
+
+        if ($user->isLiderCongregacao()) {
+            $evento->congregacao_id = $user->congregacao_id;
+        }
 
         return view(
             'eventos.form',
@@ -106,7 +136,27 @@ class EventoController extends Controller
         StoreEventoRequest $request,
         CreateEventoAction $action
     ): RedirectResponse {
-        $action->execute($request->validated());
+        Gate::authorize('create', Evento::class);
+
+        $user = $request->user();
+
+        $dados = $request->validated();
+
+        /*
+         * A congregação do líder é determinada
+         * pelo usuário autenticado, nunca pelo formulário.
+         */
+        if ($user->isLiderCongregacao()) {
+            abort_if(
+                $user->congregacao_id === null,
+                403,
+                'Usuário sem congregação vinculada.'
+            );
+
+            $dados['congregacao_id'] = $user->congregacao_id;
+        }
+
+        $action->execute($dados);
 
         return redirect()
             ->route('eventos.index')
@@ -118,16 +168,17 @@ class EventoController extends Controller
      */
     public function edit(Evento $evento): View
     {
-        $this->authorize('update', $evento);
+        Gate::authorize('update', $evento);
 
         $user = auth()->user();
 
         $congregacoes = $user->isAdminGeral()
-            ? Congregacao::orderBy('nome')->get()
-            : Congregacao::where(
-                'id',
-                $user->congregacao_id
-            )->get();
+            ? Congregacao::query()
+                ->orderBy('nome')
+                ->get()
+            : Congregacao::query()
+                ->where('id', $user->congregacao_id)
+                ->get();
 
         return view(
             'eventos.form',
@@ -143,9 +194,31 @@ class EventoController extends Controller
         Evento $evento,
         UpdateEventoAction $action
     ): RedirectResponse {
+        Gate::authorize('update', $evento);
+
+        $user = $request->user();
+
+        $dados = $request->validated();
+
+        /*
+         * Impede que o líder transfira um evento
+         * para outra congregação.
+         */
+        if ($user->isLiderCongregacao()) {
+            abort_if(
+                $user->congregacao_id === null ||
+                (int) $evento->congregacao_id !==
+                    (int) $user->congregacao_id,
+                403,
+                'Você não pode alterar eventos de outra congregação.'
+            );
+
+            $dados['congregacao_id'] = $user->congregacao_id;
+        }
+
         $action->execute(
             $evento,
-            $request->validated()
+            $dados
         );
 
         return redirect()
@@ -160,7 +233,7 @@ class EventoController extends Controller
         Evento $evento,
         DeleteEventoAction $action
     ): RedirectResponse {
-        $this->authorize('delete', $evento);
+        Gate::authorize('delete', $evento);
 
         $action->execute($evento);
 

@@ -18,6 +18,7 @@ class HistoricoControleAgenda extends Model
         'modo_anterior',
         'modo_novo',
         'alterado_por',
+        'created_at',
     ];
 
     protected function casts(): array
@@ -30,6 +31,15 @@ class HistoricoControleAgenda extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $historico): void {
+            if ($historico->created_at === null) {
+                $historico->created_at = now();
+            }
+        });
+    }
+
     public function controleAgenda(): BelongsTo
     {
         return $this->belongsTo(
@@ -40,6 +50,9 @@ class HistoricoControleAgenda extends Model
 
     public function responsavel(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'alterado_por');
+        return $this->belongsTo(
+            User::class,
+            'alterado_por'
+        );
     }
 }
