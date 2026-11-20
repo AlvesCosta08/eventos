@@ -22,21 +22,22 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.3'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo, mysql, dom, filter, gd, iconv, json, mbstring, pdo, pdo_mysql, tokenizer, xml
-        coverage: pcov
+        php-version: '8.4' # ✅ Ajustado para 8.4 (mesma versão do seu Docker/HostGator)
+        extensions: mbstring, xml, ctype, iconv, intl, pdo, mysql, dom, filter, gd, json, pdo_mysql, tokenizer
+        coverage: pcov # ✅ Driver de cobertura rápido para o Pest
 
     - name: Get composer cache directory
       id: composer-cache
       run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4 # ✅ Atualizado para v4 (versão mais recente)
       with:
         path: ${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -56,8 +57,7 @@ jobs:
       run: ./vendor/bin/phpstan analyse app --memory-limit=512M --error-format=github
 
     - name: Run Migrations
-      run: |
-        php artisan migrate --env=testing --force
+      run: php artisan migrate --env=testing --force
 
     - name: Execute Tests
       run: ./vendor/bin/pest --coverage --min=80
@@ -71,7 +71,7 @@ jobs:
 
     - name: Upload Coverage Report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4 # ✅ Atualizado para v4
       with:
         name: coverage-report
         path: coverage/
