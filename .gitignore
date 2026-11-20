@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+diag-*.php
+*.bak
+clear_cache.php
