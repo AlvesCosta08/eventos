@@ -12,6 +12,10 @@ it('registra auditoria ao criar um evento', function () {
     $admin = User::factory()->admin()->create();
     $cong = Congregacao::factory()->create();
 
+    // ✅ CORREÇÃO: Limpa as auditorias geradas pela criação do User e Congregacao
+    // para que a contagem reflita APENAS a criação do Evento.
+    Audit::query()->delete();
+
     $this->actingAs($admin);
 
     $evento = Evento::create([
