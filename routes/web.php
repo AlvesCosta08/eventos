@@ -1,6 +1,6 @@
-
 <?php
 
+use App\Http\Controllers\AuditController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarioPublicoController;
 use App\Http\Controllers\ControleAgendaController;
@@ -69,17 +69,26 @@ Route::middleware('auth')->group(function () {
     | Acesso exclusivo do Administrador Geral.
     | A autorização é verificada no ControleAgendaController.
     */
-
     Route::get('/controle-agenda', [
         ControleAgendaController::class,
-        'index'
+        'index',
     ])->name('controle-agenda.index');
 
     Route::put('/controle-agenda/{ano}', [
         ControleAgendaController::class,
-        'update'
+        'update',
     ])
         ->whereNumber('ano')
         ->name('controle-agenda.update');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auditoria do Sistema
+    |--------------------------------------------------------------------------
+    | Histórico de alterações (Criado, Atualizado, Deletado).
+    | A autorização (Admin Geral) é verificada no AuditController.
+    */
+    Route::get('/auditoria', [AuditController::class, 'index'])
+        ->name('auditoria.index');
 
 });

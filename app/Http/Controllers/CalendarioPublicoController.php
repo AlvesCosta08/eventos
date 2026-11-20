@@ -19,6 +19,11 @@ class CalendarioPublicoController extends Controller
             ? CarbonImmutable::createFromFormat('!Y-m', $dados['mes'])
             : CarbonImmutable::now()->startOfMonth();
 
+        // ✅ CORREÇÃO: Garantir ao PHPStan que $mes é sempre uma instância válida de CarbonImmutable
+        if (! $mes instanceof CarbonImmutable) {
+            $mes = CarbonImmutable::now()->startOfMonth();
+        }
+
         $inicio = $mes->startOfMonth();
         $fim = $mes->endOfMonth();
 
@@ -42,11 +47,11 @@ class CalendarioPublicoController extends Controller
         );
 
         return view('welcome', [
-            'mes' => $mes,
-            'eventos' => $eventos,
+            'mes'           => $mes,
+            'eventos'       => $eventos,
             'eventosPorDia' => $eventosPorDia,
-            'mesAnterior' => $mes->subMonth()->format('Y-m'),
-            'mesSeguinte' => $mes->addMonth()->format('Y-m'),
+            'mesAnterior'   => $mes->subMonth()->format('Y-m'),
+            'mesSeguinte'   => $mes->addMonth()->format('Y-m'),
         ]);
     }
 }

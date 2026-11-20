@@ -14,7 +14,7 @@ class UpdateUserRequest extends FormRequest
         $usuarioAutenticado = $this->user();
         $usuarioEditado = $this->route('user');
 
-        if (!$usuarioAutenticado || !$usuarioEditado instanceof User) {
+        if (! $usuarioAutenticado || ! $usuarioEditado instanceof User) {
             return false;
         }
 

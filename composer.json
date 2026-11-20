@@ -9,7 +9,8 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.4",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "owen-it/laravel-auditing": "^14.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -23,7 +24,8 @@
         "pestphp/pest": "^3.8",
         "pestphp/pest-plugin-laravel": "^3.2",
         "phpstan/phpstan": "^2.3",
-        "phpunit/phpunit": "^11.5.50"
+        "phpunit/phpunit": "^11.5.50",
+        "rector/rector": "^2.8"
     },
     "autoload": {
         "psr-4": {

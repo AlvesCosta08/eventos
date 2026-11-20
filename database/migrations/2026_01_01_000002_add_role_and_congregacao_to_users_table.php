@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('users', 'role')) {
+        if (! Schema::hasColumn('users', 'role')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->string('role', 30)->default('visualizador')->after('password');
                 $table->index('role');
             });
         }
 
-        if (!Schema::hasColumn('users', 'congregacao_id')) {
+        if (! Schema::hasColumn('users', 'congregacao_id')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->foreignId('congregacao_id')
                     ->nullable()

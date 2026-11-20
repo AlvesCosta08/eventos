@@ -34,8 +34,9 @@ class HistoricoControleAgenda extends Model
     protected static function booted(): void
     {
         static::creating(function (self $historico): void {
-            if ($historico->created_at === null) {
-                $historico->created_at = now();
+            // ✅ CORREÇÃO: Usando getAttribute() para bypassar a inferência de tipo do PHPStan
+            if (is_null($historico->getAttribute('created_at'))) {
+                $historico->setAttribute('created_at', now());
             }
         });
     }

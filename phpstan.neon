@@ -1,0 +1,18 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - database
+        - tests
+        - routes
+
+    # Nível de rigor (0 a 9). Vamos começar no 5, que é o "sweet spot" para Laravel.
+    level: 5
+
+    # Ignorar arquivos de cache ou vendor
+    excludePaths:
+        - storage/*
+        - vendor/*
+        - bootstrap/cache/*

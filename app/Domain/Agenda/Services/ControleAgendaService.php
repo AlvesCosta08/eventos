@@ -7,8 +7,8 @@ use App\Models\Congregacao;
 use App\Models\ControleAgenda;
 use App\Models\HistoricoControleAgenda;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 
 class ControleAgendaService
 {
@@ -18,7 +18,7 @@ class ControleAgendaService
             ->where('ano', $ano)
             ->first();
 
-        return $controle?->modo ?? ModoAgenda::Bloqueada;
+        return $controle ? $controle->modo : ModoAgenda::Bloqueada;
     }
 
     public function podeGerenciar(
@@ -102,7 +102,9 @@ class ControleAgendaService
 
             $modoAnterior = $controle->modo;
 
-            if ($modoAnterior === $novoModo) {
+            // ✅ CORREÇÃO FINAL: O PHPStan infere $modoAnterior como string.
+            // Comparamos diretamente com o valor string do enum ($novoModo->value).
+            if ((string) $modoAnterior === $novoModo->value) {
                 return $controle;
             }
 

@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
                         '/'
                     );
 
-                    return $baseUrl . '/public/' . ltrim($path, '/');
+                    return $baseUrl.'/public/'.ltrim($path, '/');
                 }
             );
         }

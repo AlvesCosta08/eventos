@@ -22,14 +22,10 @@ class StoreEventoRequest extends FormRequest
             return false;
         }
 
-        // Administrador Geral pode cadastrar
-        // eventos independentemente do modo da agenda.
         if ($user->isAdminGeral()) {
             return true;
         }
 
-        // Apenas líderes vinculados a uma congregação
-        // podem cadastrar eventos.
         if (
             ! $user->isLiderCongregacao()
             || $user->congregacao_id === null
@@ -39,8 +35,6 @@ class StoreEventoRequest extends FormRequest
 
         $data = $this->input('dt_evento');
 
-        // Datas inválidas serão tratadas pelas
-        // regras de validação, não pela autorização.
         if (! is_string($data)) {
             return true;
         }
@@ -48,8 +42,9 @@ class StoreEventoRequest extends FormRequest
         try {
             $dataEvento = Carbon::createFromFormat('!Y-m-d', $data);
 
+            // ✅ CORREÇÃO: Comparar com null em vez de false
             if (
-                $dataEvento === false
+                $dataEvento === null
                 || $dataEvento->format('Y-m-d') !== $data
             ) {
                 return true;
@@ -60,8 +55,6 @@ class StoreEventoRequest extends FormRequest
             return true;
         }
 
-        // RN-001: consulta o modo da agenda
-        // correspondente ao ano do evento.
         return app(ControleAgendaService::class)
             ->podeGerenciar(
                 $user,
@@ -70,46 +63,17 @@ class StoreEventoRequest extends FormRequest
             );
     }
 
-    /**
-     * Define as regras de validação.
-     */
     public function rules(): array
     {
         return [
-            'evento' => [
-                'required',
-                'string',
-                'max:150',
-            ],
-
-            'anotacoes' => [
-                'nullable',
-                'string',
-            ],
-
-            'congregacao_id' => [
-                'required',
-                'integer',
-                Rule::exists('congregacoes', 'id'),
-            ],
-
-            'dt_evento' => [
-                'required',
-                'date',
-                'date_format:Y-m-d',
-            ],
-
-            'situacao' => [
-                'required',
-                Rule::enum(SituacaoEvento::class),
-            ],
+            'evento' => ['required', 'string', 'max:150'],
+            'anotacoes' => ['nullable', 'string'],
+            'congregacao_id' => ['required', 'integer', Rule::exists('congregacoes', 'id')],
+            'dt_evento' => ['required', 'date', 'date_format:Y-m-d'],
+            'situacao' => ['required', Rule::enum(SituacaoEvento::class)],
         ];
     }
 
-    /**
-     * Garante que o líder cadastre eventos
-     * somente na própria congregação.
-     */
     protected function prepareForValidation(): void
     {
         $user = $this->user();
@@ -118,10 +82,7 @@ class StoreEventoRequest extends FormRequest
             return;
         }
 
-        if (
-            $user->isLiderCongregacao()
-            && $user->congregacao_id !== null
-        ) {
+        if ($user->isLiderCongregacao() && $user->congregacao_id !== null) {
             $this->merge([
                 'congregacao_id' => $user->congregacao_id,
             ]);

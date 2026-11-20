@@ -24,8 +24,8 @@ class Adtc2MvpCommand extends Command
         $this->generateFiles();
         $this->newLine();
 
-        if (!$this->option('skip-migrate')) {
-            $fresh = !$this->option('keep-data');
+        if (! $this->option('skip-migrate')) {
+            $fresh = ! $this->option('keep-data');
             $cmd = $fresh ? 'migrate:fresh' : 'migrate';
 
             $this->info($fresh
@@ -34,25 +34,27 @@ class Adtc2MvpCommand extends Command
 
             try {
                 Artisan::call($cmd, ['--force' => true]);
-                $this->line('  ' . trim(Artisan::output()));
+                $this->line('  '.trim(Artisan::output()));
             } catch (\Throwable $e) {
-                $this->error('❌ Falha nas migrations: ' . $e->getMessage());
+                $this->error('❌ Falha nas migrations: '.$e->getMessage());
+
                 return self::FAILURE;
             }
         }
 
-        if (!$this->option('skip-seed')) {
+        if (! $this->option('skip-seed')) {
             $this->info('🌱 Populando banco...');
             try {
                 Artisan::call('db:seed', ['--force' => true]);
-                $this->line('  ' . trim(Artisan::output()));
+                $this->line('  '.trim(Artisan::output()));
             } catch (\Throwable $e) {
-                $this->error('❌ Falha nos seeders: ' . $e->getMessage());
+                $this->error('❌ Falha nos seeders: '.$e->getMessage());
+
                 return self::FAILURE;
             }
         }
 
-        if (!$this->option('skip-tests')) {
+        if (! $this->option('skip-tests')) {
             $this->info('🧪 Executando testes...');
             $exitCode = Artisan::call('test');
             $this->line(Artisan::output());
@@ -62,12 +64,8 @@ class Adtc2MvpCommand extends Command
         }
 
         $this->displaySummary();
-        return self::SUCCESS;
-    }
 
-    private function hasPest(): bool
-    {
-        return file_exists(base_path('vendor/bin/pest'));
+        return self::SUCCESS;
     }
 
     private function generateFiles(): void
@@ -169,7 +167,7 @@ class Adtc2MvpCommand extends Command
     private function cleanupOldMigrations(): void
     {
         $migrationsDir = database_path('migrations');
-        if (!File::isDirectory($migrationsDir)) {
+        if (! File::isDirectory($migrationsDir)) {
             return;
         }
 
@@ -2679,4 +2677,4 @@ it('admin pode atualizar usuário sem trocar senha', function () {
 });
 PHP_FILE;
     }
-}  
+}

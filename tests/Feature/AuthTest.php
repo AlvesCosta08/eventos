@@ -3,7 +3,8 @@
 
 use App\Models\User;
 
-use function Pest\Laravel\{get, post};
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
 
 it('redireciona guest para login ao acessar dashboard', function () {
     get(route('dashboard'))
