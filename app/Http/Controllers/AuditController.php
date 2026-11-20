@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use OwenIt\Auditing\Models\Audit;
@@ -23,6 +22,10 @@ class AuditController extends Controller
             ->latest('created_at')
             ->paginate(20);
 
-        return view('audits.index', compact('audits'));
+        // ✅ CORREÇÃO PHPStan: Informa que esta string é uma view-string válida
+        /** @var view-string $viewName */
+        $viewName = 'audits.index';
+
+        return view($viewName, compact('audits'));
     }
 }
