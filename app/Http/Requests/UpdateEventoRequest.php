@@ -4,8 +4,10 @@ namespace App\Http\Requests;
 
 use App\Domain\Agenda\Services\ControleAgendaService;
 use App\Domain\Eventos\Enums\SituacaoEvento;
+use App\Domain\Eventos\Enums\TipoEvento;
 use App\Models\Evento;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -52,7 +54,6 @@ class UpdateEventoRequest extends FormRequest
         try {
             $novaData = Carbon::createFromFormat('!Y-m-d', $data);
 
-            // ✅ CORREÇÃO: Comparar com null em vez de false
             if (
                 $novaData === null
                 || $novaData->format('Y-m-d') !== $data
@@ -70,11 +71,34 @@ class UpdateEventoRequest extends FormRequest
 
     public function rules(): array
     {
+        // ✅ Captura o ID do evento para ignorá-lo na validação de unicidade
+        $eventoId = $this->route('evento')?->id;
+
         return [
             'evento' => ['required', 'string', 'max:150'],
+            'tipo' => ['required', Rule::enum(TipoEvento::class)], // ✅ Novo campo
             'anotacoes' => ['nullable', 'string'],
             'congregacao_id' => ['required', 'integer', Rule::exists('congregacoes', 'id')],
-            'dt_evento' => ['required', 'date_format:Y-m-d'],
+            'dt_evento' => [
+                'required',
+                'date',
+                'date_format:Y-m-d',
+                // ✅ Regra de Negócio: Apenas um evento do tipo "Campo" por dia (ignorando o próprio evento em edição)
+                function (string $attribute, mixed $value, Closure $fail) use ($eventoId) {
+                    if ($this->input('tipo') === 'campo') {
+                        $query = Evento::whereDate('dt_evento', $value)
+                            ->where('tipo', 'campo');
+
+                        if ($eventoId) {
+                            $query->where('id', '!=', $eventoId);
+                        }
+
+                        if ($query->exists()) {
+                            $fail('Já existe um evento do tipo "Campo" agendado para esta data. Apenas um evento de Campo é permitido por dia.');
+                        }
+                    }
+                },
+            ],
             'situacao' => ['required', Rule::enum(SituacaoEvento::class)],
         ];
     }

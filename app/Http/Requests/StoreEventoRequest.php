@@ -4,7 +4,10 @@ namespace App\Http\Requests;
 
 use App\Domain\Agenda\Services\ControleAgendaService;
 use App\Domain\Eventos\Enums\SituacaoEvento;
+use App\Domain\Eventos\Enums\TipoEvento;
+use App\Models\Evento;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,7 +45,6 @@ class StoreEventoRequest extends FormRequest
         try {
             $dataEvento = Carbon::createFromFormat('!Y-m-d', $data);
 
-            // ✅ CORREÇÃO: Comparar com null em vez de false
             if (
                 $dataEvento === null
                 || $dataEvento->format('Y-m-d') !== $data
@@ -67,9 +69,25 @@ class StoreEventoRequest extends FormRequest
     {
         return [
             'evento' => ['required', 'string', 'max:150'],
+            'tipo' => ['required', Rule::enum(TipoEvento::class)], // ✅ Novo campo
             'anotacoes' => ['nullable', 'string'],
             'congregacao_id' => ['required', 'integer', Rule::exists('congregacoes', 'id')],
-            'dt_evento' => ['required', 'date', 'date_format:Y-m-d'],
+            'dt_evento' => [
+                'required',
+                'date',
+                'date_format:Y-m-d',
+                // ✅ Regra de Negócio: Apenas um evento do tipo "Campo" por dia
+                function (string $attribute, mixed $value, Closure $fail) {
+                    if ($this->input('tipo') === 'campo') {
+                        $query = Evento::whereDate('dt_evento', $value)
+                            ->where('tipo', 'campo');
+
+                        if ($query->exists()) {
+                            $fail('Já existe um evento do tipo "Campo" agendado para esta data. Apenas um evento de Campo é permitido por dia.');
+                        }
+                    }
+                },
+            ],
             'situacao' => ['required', Rule::enum(SituacaoEvento::class)],
         ];
     }

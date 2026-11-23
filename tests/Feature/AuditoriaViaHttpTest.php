@@ -19,6 +19,7 @@ it('audita a criação de evento via requisição HTTP real (Cenário de Produç
     // 2. Ação: Simula o POST do formulário pelo navegador
     $response = $this->post(route('eventos.store'), [
         'evento'         => 'Culto de Jovens',
+        'tipo'           => 'congregacao', // ✅ Adicionado: campo obrigatório
         'dt_evento'      => '2026-12-25',
         'congregacao_id' => $cong->id,
         'situacao'       => 'agendado',
@@ -46,6 +47,7 @@ it('audita a atualização de evento via requisição HTTP real', function () {
 
     $response = $this->put(route('eventos.update', $evento), [
         'evento'         => 'Culto Atualizado',
+        'tipo'           => 'campo', // ✅ Adicionado: campo obrigatório
         'dt_evento'      => '2026-12-26',
         'congregacao_id' => $evento->congregacao_id,
         'situacao'       => 'realizado',

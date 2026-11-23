@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Eventos')
@@ -67,10 +66,10 @@
           action="{{ route('eventos.index') }}"
           class="p-6">
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
 
             {{-- Busca --}}
-            <div class="xl:col-span-1">
+            <div class="xl:col-span-2">
                 <label for="busca"
                        class="mb-2 block text-xs font-semibold text-slate-600">
                     Buscar evento
@@ -84,6 +83,24 @@
                     placeholder="Nome ou anotação..."
                     class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 >
+            </div>
+
+            {{-- ✅ NOVO FILTRO: Tipo --}}
+            <div>
+                <label for="tipo"
+                       class="mb-2 block text-xs font-semibold text-slate-600">
+                    Tipo
+                </label>
+
+                <select
+                    id="tipo"
+                    name="tipo"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                    <option value="">Todos os tipos</option>
+                    <option value="campo" @selected(($filtros['tipo'] ?? '') === 'campo')>Campo</option>
+                    <option value="congregacao" @selected(($filtros['tipo'] ?? '') === 'congregacao')>Congregação</option>
+                </select>
             </div>
 
             {{-- Congregação --}}
@@ -224,6 +241,12 @@
                         Evento
                     </th>
 
+                    {{-- ✅ NOVA COLUNA: Tipo --}}
+                    <th scope="col"
+                        class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Tipo
+                    </th>
+
                     <th scope="col"
                         class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
                         Congregação
@@ -261,6 +284,19 @@
                                    title="{{ $evento->anotacoes }}">
                                     {{ $evento->anotacoes }}
                                 </p>
+                            @endif
+                        </td>
+
+                        {{-- ✅ NOVA COLUNA: Dados do Tipo --}}
+                        <td class="whitespace-nowrap px-6 py-4">
+                            @if($evento->tipo?->value === 'campo')
+                                <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                                    Campo
+                                </span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800">
+                                    Congregação
+                                </span>
                             @endif
                         </td>
 
@@ -345,8 +381,9 @@
                         </td>
                     </tr>
                 @empty
+                    {{-- ✅ Atualizado de colspan="5" para colspan="6" por causa da nova coluna --}}
                     <tr>
-                        <td colspan="5" class="px-6 py-16 text-center">
+                        <td colspan="6" class="px-6 py-16 text-center">
                             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                                 <svg class="h-7 w-7"
                                      viewBox="0 0 24 24"

@@ -19,6 +19,7 @@ class UpdateEventoAction
             
             $dto = new UpdateEventoDTO(
                 evento: $dto->evento,
+                tipo: $dto->tipo, // ✅ Mantendo o tipo
                 dtEvento: $dto->dtEvento,
                 congregacaoId: $user->congregacao_id,
                 situacao: $dto->situacao,
@@ -28,6 +29,7 @@ class UpdateEventoAction
 
         $evento->update([
             'evento'         => $dto->evento,
+            'tipo'           => $dto->tipo, // ✅ Salvando no banco
             'anotacoes'      => $dto->anotacoes,
             'congregacao_id' => $dto->congregacaoId,
             'dt_evento'      => $dto->dtEvento,

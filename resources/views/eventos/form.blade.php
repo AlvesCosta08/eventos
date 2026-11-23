@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @php
@@ -218,13 +217,50 @@
                     </h2>
 
                     <p class="mt-1 text-xs text-slate-500">
-                        Defina a congregação, a data e a situação.
+                        Defina o tipo, a congregação, a data e a situação.
                     </p>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 gap-5 p-6 md:grid-cols-2 xl:grid-cols-3">
+
+            {{-- ✅ NOVO CAMPO: Tipo do Evento --}}
+            <div>
+                <label for="tipo"
+                       class="mb-2 block text-sm font-semibold text-slate-700">
+                    Tipo do evento
+                    <span class="text-red-500">*</span>
+                </label>
+
+                <select
+                    id="tipo"
+                    name="tipo"
+                    required
+                    aria-invalid="{{ $errors->has('tipo') ? 'true' : 'false' }}"
+                    @error('tipo') aria-describedby="erro-tipo" @enderror
+                    class="w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:ring-2
+                        @error('tipo')
+                            border-red-300 focus:border-red-500 focus:ring-red-100
+                        @else
+                            border-slate-200 focus:border-blue-500 focus:ring-blue-100
+                        @enderror"
+                >
+                    <option value="">Selecione o tipo</option>
+                    <option value="campo" @selected(old('tipo', $evento->tipo?->value ?? 'congregacao') === 'campo')>Campo</option>
+                    <option value="congregacao" @selected(old('tipo', $evento->tipo?->value ?? 'congregacao') === 'congregacao')>Congregação</option>
+                </select>
+
+                @error('tipo')
+                    <p id="erro-tipo" class="mt-2 text-xs font-medium text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
+
+                <p class="mt-2 text-xs text-slate-400">
+                    Apenas um evento de "Campo" é permitido por dia.
+                </p>
+            </div>
 
             {{-- Congregação --}}
             <div>

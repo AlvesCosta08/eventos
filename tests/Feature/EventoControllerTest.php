@@ -1,11 +1,11 @@
 <?php
 
+use App\Domain\Agenda\Services\ControleAgendaService;
+use App\Domain\Eventos\Enums\SituacaoEvento;
+use App\Domain\Users\Enums\UserRole;
 use App\Models\Congregacao;
 use App\Models\Evento;
 use App\Models\User;
-use App\Domain\Users\Enums\UserRole;
-use App\Domain\Eventos\Enums\SituacaoEvento;
-use App\Domain\Agenda\Services\ControleAgendaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -28,6 +28,7 @@ it('permite que um admin geral crie um evento em qualquer congregacao', function
     $dadosDoEvento = [
         'evento'         => 'Culto de Celebração', 
         'anotacoes'      => 'Evento especial de fim de ano',
+        'tipo'           => 'congregacao', // ✅ ADICIONADO: Campo obrigatório
         'dt_evento'      => now()->addDays(10)->format('Y-m-d'),
         'congregacao_id' => $congregacao->id,
         'situacao'       => SituacaoEvento::Agendado->value,
@@ -69,6 +70,7 @@ it('forca a congregacao do lider na criacao, ignorando dados maliciosos do formu
 
     $dadosMaliciosos = [
         'evento'         => 'Evento do Líder',
+        'tipo'           => 'campo', // ✅ ADICIONADO: Campo obrigatório
         'dt_evento'      => now()->addDays(5)->format('Y-m-d'),
         'congregacao_id' => $outraCongregacao->id,
         'situacao'       => SituacaoEvento::Agendado->value,
@@ -90,8 +92,6 @@ it('forca a congregacao do lider na criacao, ignorando dados maliciosos do formu
 });
 
 it('bloqueia a criacao se o lider nao tiver congregacao vinculada', function () {
-    // ✅ withoutExceptionHandling REMOVIDO aqui para permitir o 403 do FormRequest
-
     $liderSemCongregacao = User::factory()->create();
     $liderSemCongregacao->forceFill([
         'role'           => UserRole::LiderCongregacao,
@@ -102,11 +102,11 @@ it('bloqueia a criacao se o lider nao tiver congregacao vinculada', function () 
 
     $response = $this->post(route('eventos.store'), [
         'evento'    => 'Evento Impossível',
+        'tipo'      => 'congregacao', // ✅ ADICIONADO: Campo obrigatório
         'dt_evento' => now()->addDays(5)->format('Y-m-d'),
         'situacao'  => SituacaoEvento::Agendado->value,
     ]);
 
-    // O FormRequest bloqueia com 403 antes de chegar no Controller
     $response->assertForbidden(); 
 });
 
@@ -116,8 +116,6 @@ it('bloqueia a criacao se o lider nao tiver congregacao vinculada', function () 
  * =========================================================================
  */
 it('bloqueia a edicao se o lider tentar alterar evento de outra congregacao', function () {
-    // ✅ withoutExceptionHandling REMOVIDO aqui para permitir o 403 do FormRequest
-
     $congregacaoA = Congregacao::factory()->create();
     $congregacaoB = Congregacao::factory()->create();
     
@@ -136,11 +134,11 @@ it('bloqueia a edicao se o lider tentar alterar evento de outra congregacao', fu
 
     $response = $this->put(route('eventos.update', $eventoDaCongregacaoB), [
         'evento'    => 'Tentativa de Hack',
+        'tipo'      => 'congregacao', // ✅ ADICIONADO: Campo obrigatório
         'dt_evento' => now()->addDays(5)->format('Y-m-d'),
         'situacao'  => SituacaoEvento::Agendado->value,
     ]);
 
-    // O FormRequest bloqueia com 403
     $response->assertForbidden();
 });
 
@@ -167,6 +165,7 @@ it('permite que o lider atualize um evento da sua propria congregacao', function
 
     $response = $this->put(route('eventos.update', $evento), [
         'evento'         => 'Evento Atualizado',
+        'tipo'           => 'campo', // ✅ ADICIONADO: Campo obrigatório
         'dt_evento'      => now()->addDays(5)->format('Y-m-d'),
         'congregacao_id' => $congregacao->id,
         'situacao'       => SituacaoEvento::Agendado->value,

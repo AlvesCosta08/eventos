@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Eventos\Enums\SituacaoEvento;
+use App\Domain\Eventos\Enums\TipoEvento; // ✅ 1. Importa a nova Enum de Tipo
 use App\Models\User;
 use Carbon\Carbon;
 use Database\Factories\EventoFactory;
@@ -10,31 +11,33 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use OwenIt\Auditing\Contracts\Auditable;       // ✅ 1. ADICIONADO: Importa a interface
-use OwenIt\Auditing\Auditable as AuditableTrait; // ✅ 2. ADICIONADO: Importa o Trait
+use OwenIt\Auditing\Contracts\Auditable;
+use OwenIt\Auditing\Auditable as AuditableTrait;
 
 /**
  * @property \Carbon\Carbon $dt_evento
+ * @property-read \App\Domain\Eventos\Enums\TipoEvento $tipo
  */
-class Evento extends Model implements Auditable // ✅ 3. ADICIONADO: Implementa a interface
+class Evento extends Model implements Auditable
 {
     /** @use HasFactory<EventoFactory> */
-    use HasFactory;
-    use AuditableTrait; // ✅ 4. ADICIONADO: Usa o Trait que faz a mágica acontecer
+    use HasFactory, AuditableTrait;
 
     protected $table = 'eventos';
 
     protected $fillable = [
         'evento',
+        'tipo', // ✅ 2. Adicionado ao fillable
         'anotacoes',
         'congregacao_id',
         'dt_evento',
         'situacao',
     ];
 
-    // ✅ RECOMENDADO: Define exatamente quais campos serão rastreados (melhora performance e clareza)
+    // ✅ 3. Define exatamente quais campos serão rastreados pela auditoria
     protected $auditable = [
         'evento',
+        'tipo',
         'anotacoes',
         'congregacao_id',
         'dt_evento',
@@ -46,6 +49,7 @@ class Evento extends Model implements Auditable // ✅ 3. ADICIONADO: Implementa
         return [
             'dt_evento' => 'date',
             'situacao' => SituacaoEvento::class,
+            'tipo' => TipoEvento::class, // ✅ 4. Cast para a Enum
         ];
     }
 
@@ -81,7 +85,7 @@ class Evento extends Model implements Auditable // ✅ 3. ADICIONADO: Implementa
             return $q;
         }
 
-        // ✅ CORREÇÃO: Usuários sem congregação vinculada não visualizam eventos
+        // Usuários sem congregação vinculada não visualizam eventos
         if ($user->congregacao_id === null) {
             return $q->whereRaw('1 = 0');
         }
